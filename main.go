@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/Loukay/tipsee-api/pagination"
 	"github.com/go-redis/redis/v8"
@@ -48,19 +47,7 @@ func main() {
 	app.Get("/alcohols", controller.GetRecords)
 	app.Get("/cocktails", controller.GetCocktails)
 
-	host := os.Getenv("host")
-
-	if host == "" {
-		host = "127.0.0.1"
-	}
-
-	port := os.Getenv("port")
-
-	if port == "" {
-		port = "3001"
-	}
-
-	err = app.Listen(":" + port)
+	err = app.Listen(":3000")
 
 	if err != nil {
 		log.Fatal("Failed to listen to web server")

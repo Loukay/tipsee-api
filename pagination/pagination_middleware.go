@@ -29,7 +29,7 @@ func New(config ...Config) fiber.Handler {
 		if err != nil || page <= 0 {
 			page = 1
 		}
-		offset := cfg.ItemsPerPage * page
+		offset := cfg.ItemsPerPage * (page - 1)
 		c.Locals("offset", offset)
 		c.Locals("limit", cfg.ItemsPerPage)
 		return c.Next()

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
@@ -30,22 +32,34 @@ func (controller Controller) GetRecords(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": formatRedisOutput(results)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": FormatRedisOutput(results)})
 }
 
 // GetCocktails fetches all cocktails from Redis
 func (controller Controller) GetCocktails(c *fiber.Ctx) error {
 
-	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:cocktails", "*", "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
+	tagsQuery := c.Query("ingredients")
+
+	var redisQuery string
+
+	if tagsQuery != "" {
+		tags := strings.Split(tagsQuery, ",")
+		redisQuery = FormatRedisTagsQuery("ingredients", tags)
+	} else {
+		redisQuery = "*"
+	}
+
+	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:cocktails", redisQuery, "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": formatRedisOutput(results)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": FormatRedisOutput(results)})
 
 }
 
-func formatRedisOutput(output []interface{}) []interface{} {
+// FormatRedisOutput formats the output of a Redis FT.SEARCH query
+func FormatRedisOutput(output []interface{}) []interface{} {
 
 	var results []interface{}
 
@@ -65,4 +79,27 @@ func formatRedisOutput(output []interface{}) []interface{} {
 
 	return results
 
+}
+
+// FormatRedisTagsQuery format a slice of tag values to a usable FT.SEARCH query
+func FormatRedisTagsQuery(tag string, values []string) string {
+	output := ""
+	for _, value := range values {
+		output += fmt.Sprintf("@%s:{ %s } ", tag, escapeRedisTag(value))
+	}
+	return output
+}
+
+// espaceRedisTag escapes some characters that break Redis queries
+func escapeRedisTag(tag string) string {
+	replacer := strings.NewReplacer(
+		"-", "\\-",
+		"(", "\\(",
+		")", "\\)",
+		"{", "\\{",
+		"}", "\\}",
+		"[", "\\[",
+		"]", "\\]",
+	)
+	return replacer.Replace(tag)
 }

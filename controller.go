@@ -33,6 +33,18 @@ func (controller Controller) GetRecords(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": formatRedisOutput(results)})
 }
 
+// GetCocktails fetches all cocktails from Redis
+func (controller Controller) GetCocktails(c *fiber.Ctx) error {
+
+	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:cocktails", "*", "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": formatRedisOutput(results)})
+
+}
+
 func formatRedisOutput(output []interface{}) []interface{} {
 
 	var results []interface{}

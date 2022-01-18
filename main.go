@@ -17,7 +17,7 @@ func main() {
 	ctx := context.Background()
 
 	if godotenv.Load() != nil {
-		log.Fatal("There was a problem loading .env file")
+		log.Print("No .env file found. Using process envrionment variables...")
 	}
 
 	redis, err := RedisClient(&ctx)

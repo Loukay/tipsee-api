@@ -19,3 +19,5 @@ require (
 	github.com/gofiber/fiber/v2 v2.24.0
 	github.com/joho/godotenv v1.4.0
 )
+
+replace github.com/Loukay/tipsee-api/pagination => ./pagination

@@ -18,21 +18,21 @@ type Controller struct {
 // GetRecords fetches all records (ingredients, alcohols or cocktails) from Redis
 func (controller Controller) GetRecords(c *fiber.Ctx) error {
 	path := c.Path()
-	var index string
+	var key string
 
 	switch path {
 	case "/ingredients":
-		index = "idx:ingredients"
+		key = "ingredients"
 	case "/alcohols":
-		index = "idx:alcohols"
+		key = "alcohols"
 	}
 
-	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", index, "*", "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
+	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:"+key, "*", "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": FormatRedisOutput(results)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{key: FormatRedisOutput(results)})
 }
 
 // GetCocktails fetches all cocktails from Redis
@@ -54,7 +54,7 @@ func (controller Controller) GetCocktails(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"ingredients": FormatRedisOutput(results)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"cocktails": FormatRedisOutput(results)})
 
 }
 

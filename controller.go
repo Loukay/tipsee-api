@@ -32,7 +32,10 @@ func (controller Controller) GetRecords(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{key: FormatRedisOutput(results)})
+	count, results := FormatRedisOutput(results)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"count": count, "cocktails": results,
+	})
 }
 
 // GetCocktails fetches all cocktails from Redis
@@ -54,12 +57,15 @@ func (controller Controller) GetCocktails(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"cocktails": FormatRedisOutput(results)})
+	count, results := FormatRedisOutput(results)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"count": count, "cocktails": results,
+	})
 
 }
 
 // FormatRedisOutput formats the output of a Redis FT.SEARCH query
-func FormatRedisOutput(output []interface{}) []interface{} {
+func FormatRedisOutput(output []interface{}) (int64, []interface{}) {
 
 	var results []interface{}
 
@@ -77,7 +83,7 @@ func FormatRedisOutput(output []interface{}) []interface{} {
 		results = append(results, result)
 	}
 
-	return results
+	return output[0].(int64), results
 
 }
 

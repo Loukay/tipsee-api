@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/go-redis/redis/v8"
@@ -32,8 +31,6 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 			tags := strings.Split(c.Query("ingredients"), ",")
 			queryString += FormatRedisTagsQuery("ingredients", tags)
 		}
-
-		log.Printf("Query string: %s", queryString)
 
 		queryArgs := []interface{}{
 			"FT.SEARCH",

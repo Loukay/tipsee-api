@@ -43,9 +43,9 @@ func main() {
 		return c.Status(fiber.StatusOK).JSON("The CocktailDB Cache")
 	})
 
-	app.Get("/ingredients", controller.GetRecords)
-	app.Get("/alcohols", controller.GetRecords)
-	app.Get("/cocktails", controller.GetCocktails)
+	app.Get("/ingredients", controller.GetRecords("ingredients"))
+	app.Get("/alcohols", controller.GetRecords("alcohols"))
+	app.Get("/cocktails", controller.GetRecords("cocktails"))
 
 	err = app.Listen(":3000")
 

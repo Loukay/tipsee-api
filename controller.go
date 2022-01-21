@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/go-redis/redis/v8"
@@ -16,52 +17,43 @@ type Controller struct {
 }
 
 // GetRecords fetches all records (ingredients, alcohols or cocktails) from Redis
-func (controller Controller) GetRecords(c *fiber.Ctx) error {
-	path := c.Path()
-	var key string
+func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 
-	switch path {
-	case "/ingredients":
-		key = "ingredients"
-	case "/alcohols":
-		key = "alcohols"
+		searchQuery := escapeRedisTag(c.Query("search"))
+
+		queryString := searchQuery + "* "
+
+		if c.Query("ingredients") != "" && searchQuery == "" {
+			queryString = ""
+		}
+
+		if key == "cocktails" && c.Query("ingredients") != "" {
+			tags := strings.Split(c.Query("ingredients"), ",")
+			queryString += FormatRedisTagsQuery("ingredients", tags)
+		}
+
+		log.Printf("Query string: %s", queryString)
+
+		queryArgs := []interface{}{
+			"FT.SEARCH",
+			"idx:" + key,
+			queryString,
+			"LIMIT",
+			c.Locals("offset"),
+			c.Locals("limit"),
+		}
+
+		results, err := controller.Redis.Do(*controller.Ctx, queryArgs...).Slice()
+
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+		count, results := FormatRedisOutput(results)
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"count": count, key: results,
+		})
 	}
-
-	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:"+key, "*", "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	count, results := FormatRedisOutput(results)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"count": count, key: results,
-	})
-}
-
-// GetCocktails fetches all cocktails from Redis
-func (controller Controller) GetCocktails(c *fiber.Ctx) error {
-
-	tagsQuery := c.Query("ingredients")
-
-	var redisQuery string
-
-	if tagsQuery != "" {
-		tags := strings.Split(tagsQuery, ",")
-		redisQuery = FormatRedisTagsQuery("ingredients", tags)
-	} else {
-		redisQuery = "*"
-	}
-
-	results, err := controller.Redis.Do(*controller.Ctx, "FT.SEARCH", "idx:cocktails", redisQuery, "LIMIT", c.Locals("offset"), c.Locals("limit")).Slice()
-
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	count, results := FormatRedisOutput(results)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"count": count, "cocktails": results,
-	})
-
 }
 
 // FormatRedisOutput formats the output of a Redis FT.SEARCH query
@@ -106,6 +98,7 @@ func escapeRedisTag(tag string) string {
 		"}", "\\}",
 		"[", "\\[",
 		"]", "\\]",
+		"*", "\\*",
 	)
 	return replacer.Replace(tag)
 }

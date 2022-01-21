@@ -34,7 +34,7 @@ func (controller Controller) GetRecords(c *fiber.Ctx) error {
 	}
 	count, results := FormatRedisOutput(results)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"count": count, "cocktails": results,
+		"count": count, key: results,
 	})
 }
 

@@ -7,7 +7,10 @@ import (
 	"github.com/Loukay/tipsee-api/pagination"
 	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/gofiber/fiber/v2/utils"
 	"github.com/joho/godotenv"
 )
 
@@ -36,12 +39,24 @@ func main() {
 		Ctx:   &ctx,
 	}
 
+	app.Use(cache.New(cache.Config{
+		Next: func(c *fiber.Ctx) bool {
+			return c.Path() == "/monitor"
+		},
+		KeyGenerator: func(c *fiber.Ctx) string {
+			log.Print(c.OriginalURL())
+			return utils.CopyString(c.OriginalURL())
+		},
+	}))
+
 	app.Use(cors.New())
 	app.Use(pagination.New())
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON("The CocktailDB Cache")
 	})
+
+	app.Get("/monitor", monitor.New())
 
 	app.Get("/ingredients", controller.GetRecords("ingredients"))
 	app.Get("/alcohols", controller.GetRecords("alcohols"))

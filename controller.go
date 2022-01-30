@@ -46,7 +46,9 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
+
 		count, results := FormatRedisOutput(results)
+
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"count": count, key: results,
 		})
@@ -56,7 +58,7 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 // FormatRedisOutput formats the output of a Redis FT.SEARCH query
 func FormatRedisOutput(output []interface{}) (int64, []interface{}) {
 
-	var results []interface{}
+	results := make([]interface{}, 0)
 
 	length := len(output)
 

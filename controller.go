@@ -23,6 +23,12 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 
 		queryString := searchQuery + "* "
 
+		fields := make([]string, 0)
+
+		if fieldsString := c.Query("fields"); fieldsString != "" {
+			fields = strings.Split(fieldsString, ",")
+		}
+
 		if c.Query("ingredients") != "" && searchQuery == "" {
 			queryString = ""
 		}
@@ -47,7 +53,7 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 
-		count, results := FormatRedisOutput(results)
+		count, results := FormatRedisOutput(results, fields)
 
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"count": count, key: results,
@@ -56,9 +62,19 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 }
 
 // FormatRedisOutput formats the output of a Redis FT.SEARCH query
-func FormatRedisOutput(output []interface{}) (int64, []interface{}) {
+func FormatRedisOutput(output []interface{}, fields []string) (int64, []interface{}) {
 
 	results := make([]interface{}, 0)
+
+	hasFields := len(fields) > 0
+
+	fieldsMap := make(map[string]bool, 0)
+
+	if hasFields {
+		for _, field := range fields {
+			fieldsMap[field] = true
+		}
+	}
 
 	length := len(output)
 
@@ -68,8 +84,10 @@ func FormatRedisOutput(output []interface{}) (int64, []interface{}) {
 		result := map[string]string{}
 		for j := 0; j < size; j += 2 {
 			key := current[j].(string)
-			value := current[j+1].(string)
-			result[key] = value
+			if !hasFields || fieldsMap[key] {
+				value := current[j+1].(string)
+				result[key] = value
+			}
 		}
 		results = append(results, result)
 	}

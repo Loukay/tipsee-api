@@ -21,7 +21,7 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 
 		searchQuery := escapeRedisTag(c.Query("search"))
 
-		queryString := searchQuery + "* "
+		queryString := strings.TrimSpace(searchQuery) + "* "
 
 		fields := make([]string, 0)
 
@@ -37,6 +37,8 @@ func (controller Controller) GetRecords(key string) func(*fiber.Ctx) error {
 			tags := strings.Split(c.Query("ingredients"), ",")
 			queryString += FormatRedisTagsQuery("ingredients", tags)
 		}
+
+		// TODO: Make sure user input is sanitized and prevent injections
 
 		queryArgs := []interface{}{
 			"FT.SEARCH",

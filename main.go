@@ -44,7 +44,6 @@ func main() {
 			return c.Path() == "/monitor"
 		},
 		KeyGenerator: func(c *fiber.Ctx) string {
-			log.Print(c.OriginalURL())
 			return utils.CopyString(c.OriginalURL())
 		},
 	}))

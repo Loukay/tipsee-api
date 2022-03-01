@@ -98,12 +98,16 @@ func FormatRedisOutput(output []interface{}, fields []string) (int64, []interfac
 
 }
 
-// FormatRedisTagsQuery format a slice of tag values to a usable FT.SEARCH query
+// FormatRedisTagsQuery format a slice of tag values to a usable FT.SEARCH query. For example @ingredients:{ lemon juice | sugar | strawberry }
 func FormatRedisTagsQuery(tag string, values []string) string {
-	output := ""
-	for _, value := range values {
-		output += fmt.Sprintf("@%s:{ %s } ", tag, escapeRedisTag(value))
+	output := fmt.Sprintf("@%s:{", tag)
+	for i, value := range values {
+		output += fmt.Sprintf(" %s ", escapeRedisTag(value))
+		if i != len(values)-1 {
+			output += "|"
+		}
 	}
+	output += "}"
 	return output
 }
 

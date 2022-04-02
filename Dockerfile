@@ -4,7 +4,7 @@ FROM golang:1.17
 WORKDIR /build
 
 # Install dependencies
-COPY * ./
+COPY . ./
 RUN go mod download
 
 # Build server

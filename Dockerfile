@@ -4,13 +4,10 @@ FROM golang:1.17
 WORKDIR /build
 
 # Install dependencies
-COPY go.mod ./
-COPY go.sum ./
+COPY * ./
 RUN go mod download
 
 # Build server
-COPY *.go ./
-
 RUN go build -o /server
 
 CMD ["/server"]

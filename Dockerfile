@@ -1,15 +1,16 @@
+# Build the app
 FROM golang:1.17
 
-WORKDIR /app
-
-COPY . . 
+WORKDIR /build
 
 # Install dependencies
+COPY go.mod ./
+COPY go.sum ./
 RUN go mod download
 
 # Build server
+COPY *.go ./
+
 RUN go build -o /server
 
-EXPOSE 3000
-
-CMD [ "/server" ]
+CMD ["/server"]
